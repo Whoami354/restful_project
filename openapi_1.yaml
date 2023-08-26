@@ -1,0 +1,697 @@
+openapi: 3.0.3
+info:
+  title: Music & Social
+  version: 1.0.4
+  
+tags:
+  - name: lists
+    description: Alles über Listen
+  - name: auth
+    description: Informationen über die Nutzer
+  - name: generator
+    description: Bild-/Videogenerator
+  - name: media
+    description: Alles über Medien, z.B. Bilder und Videos
+  - name: posts
+    description: Posts für Social Media
+  - name: convert
+    description: Playlist Converter (optional)
+  - name: templates
+    description: Templates für die Erstellung von Posts
+    
+paths:
+  /lists:
+    post:
+      tags:
+        - lists
+      summary: Erstellen einer Liste
+      description: Erstellen einer Liste
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/List"
+      responses:
+        "201":
+          description:
+            Liste wurde erstellt
+        "400":
+          description:
+            Liste konnte nicht erstellt werden
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+  
+  /lists/{listId}:
+    get:
+      tags:
+        - lists
+      summary: Find list by ID
+      description: Returns a single list
+      parameters:
+        - name: listId
+          in: path
+          description: DESCRIPTION OF ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: SUCCESSFUL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/List'
+        '400':
+          description: NOT SUCCESSFUL
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+    patch:
+      tags:
+        - lists
+      summary: Updaten einer Liste
+      parameters:
+        - name: listId
+          required: true
+          in: path
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/List'
+      responses:
+        '200': 
+          description: Liste wurde erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/List'
+        '400':
+          description: Operation unsuccessful
+        '404':
+          description: Liste existiert nicht
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+    delete:
+      tags:
+        - lists
+      summary: Entfernen einer Liste
+      parameters:
+        - name: listId
+          required: true
+          in: path
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Liste wurde erfolgreich entfernt
+        '400':
+          description: Liste konnte nicht entfernt werden
+        '404': 
+          description: Liste existiert nicht
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+          
+  /lists/{listId}/items:
+    get:
+      tags:
+        - lists
+      summary: Listelemente einer Liste mit Id ausgeben
+      description: Gibt ein Array mit Listelementen zurück
+      parameters:
+        - name: listId
+          in: path
+          description: Id einer Liste
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: SUCCESSFUL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '400':
+          description: NOT SUCCESSFUL
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+      
+  /users:
+    post:
+      tags: 
+        - auth
+      description: Anlegen eines Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Users-request"
+      responses:
+        "201":
+          description:
+            User wurde angelegt
+        "403":
+          description:
+            Forbidden
+            
+  /users/{userId}:
+    get:
+      tags:
+        - auth
+      description: Gibt einen User zurück
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            properties:
+              id:
+                type: number
+      responses:
+        "200":
+          description:
+            User wurde zurückgegeben
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "404":
+          description:
+            User nicht gefunden
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+    patch:
+      tags:
+        - auth
+      summary: Updaten eines Users
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            properties:
+              id:
+                type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User wurde erfolgreich geändert
+        '400': 
+          description: User konnte nicht geändert werden
+        '404':
+          description: User existiert nicht
+        "403":
+          description:
+            Forbidden
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+    delete:
+      tags:
+        - auth
+      summary: Löschen eines Nutzers
+      parameters:
+        - name: userId
+          required: true
+          in: path
+          schema:
+            properties:
+              id:
+                type: integer
+      responses:
+        '200':
+          description: User wurde erfolgreich gelöscht
+        '400':
+          description: User konnte nicht gelöscht werden
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "404":
+          description:
+            User existiert nicht
+        "410":
+          description:
+            Resource steht nicht mehr zur Verfügung
+          
+  /users/{userId}/lists: # URL vielleicht lieber ändern zu irgendwas mit /findByType (wie im Pet Store Beispiel)
+    get:
+      tags:
+        - auth
+      summary: Listen eines Users werden zurückgegeben
+      parameters:
+      - name: userId
+        required: true
+        in: path
+        schema:
+          type: integer
+      - name: type
+        required: false
+        in: query
+        explode: true
+        description: Mögliche Eigenschaften nach denen gefiltert werden kann
+        schema:
+          type: string
+          enum:
+            - genre
+            - interpreters
+            
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/List'
+        '400':
+          description: operation unsuccessful
+        '404':
+          description: User not found
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+  
+  /generator/{postType}:
+    post:
+      tags:
+        - generator
+      summary: erstellen eines neuen Bilds/Videos
+      description: Erstellen eines neuen Bilds/Videos
+      parameters:
+        - name: postType
+          required: true
+          in: path
+          description: Art des Posts der generiert werden soll
+          schema:
+            type: string 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Generator-request'
+      responses:
+        '201': 
+          description: Inhalt wurde erstellt/successful operation
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/Generator'
+        '400': 
+          description: Fehler beim Erstellen
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "428":
+          description:
+            Anfrage konnte nicht bearbeitet werden. Request Body ist fehlerhaft oder Leer.
+          
+  /generator/story/quiz:
+    post:
+      tags:
+        - generator
+      summary: Erzeugen von einem Quizz aus Listen (optional)
+      description: Eine Liste aus unterschiedlichen Werten kann in ein Quiz umgewandelt werden
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Quiz-request'
+      responses:
+        '201': 
+          description: Quiz wurde erfolgreich erstellt
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/Quiz'
+        '405':
+          description: Der Typ der Liste ist nicht für ein Quiz geeignet
+        '400': 
+          description: Fehler beim erstellen des Quizz
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "428":
+          description:
+            Anfrage konnte nicht bearbeitet werden. Request Body ist fehlerhaft oder Leer.
+        
+  /media:
+    post:
+      tags:
+        - media
+      summary: Creates new media
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Media'
+      responses:
+        '201': 
+          description: New media was succesfully created
+        '400':
+          description: Creation was unsuccessful
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+  /media/{mediaId}:
+    get:
+      tags:
+        - media
+      summary: Returns media
+      parameters:
+        - name: mediaId
+          required: true
+          in: path
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+    patch: 
+      tags:
+        - media
+      summary: Updates media
+      parameters:
+        - name: mediaId
+          required: true
+          in: path
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Media'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Media not found
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+    delete:
+      tags:
+        - media
+      summary: Deletes media
+      parameters: 
+        - name: mediaId
+          required: true
+          in: path
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Media was successfully deleted
+        '400':
+          description: Invalid ID value
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+          
+  /posts:
+    post:
+      tags:
+        - posts
+      summary: Creates new post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      responses:
+        default:
+          description: successful operation
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+  /posts/{postId}:
+    get:
+      tags:
+        - posts
+      summary: Return post by ID
+      parameters:
+        - name: postId
+          required: true
+          in: path
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: operation was unsuccessful
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+        "410":
+          description:
+            Resource steht nicht mehr zur verfügung
+    patch:
+      tags:
+        - posts
+      summary: Aktualisieren eines Posts
+      parameters:
+        - name: postId
+          required: true
+          in: path
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+      responses:
+        '200':
+          description: Post wurde erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Post konnte nicht aktualisiert werden
+        '404': 
+          description: Post existiert nicht
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+    delete:
+      tags:
+        - posts
+      summary: Entfernen eines Posts
+      parameters:
+        - name: postId
+          required: true
+          in: path
+          schema:
+            type: integer
+      responses:
+        '200': 
+          description: Post wurde erfolgreich entfernt
+        '400':
+          description: Post konnte nicht entfernt werden
+        '404': 
+          description: Post existiert nicht
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+          
+  /converter/{listid}:
+    post:
+      tags:
+        - convert
+      summary: Konvertieren von Songlisten (optional)
+      description: Eine Songliste kann von einem in den anderen Musikdienst übertragen werden
+      parameters:
+        - name: listid
+          required: true
+          in: path
+          description: Liste welche Konvertiert werden soll
+          schema:
+            type: integer 
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Converter-request'
+      responses:
+        '201': 
+          description: Playlist wurde erfolgreich konvertiert
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/Converter'
+        '405':
+          description: Der Typ der Liste kann nicht konvertier werden
+        '400': 
+          description: Fehler beim konvertieren
+        "401":
+          description:
+            Vorgang nicht möglich Authorisierung notwendig
+
+components:
+  schemas:
+    List:
+      type: object
+      properties: 
+        id:
+          type: number
+        name:
+          type: string
+        createdAt:
+          type: string
+        criterias:
+          type: array
+          items:
+            properties:
+              key:
+                type: string
+              value:
+                type: string
+              operators:
+                type: string
+    Item:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          type: string
+        resource:
+          type: string
+    Users-request:
+      type: object
+      properties:
+        id:
+          type: number
+    Generator:
+      type: object
+      properties:
+        path:
+          type: string
+    Generator-request:
+      type: object
+      properties:
+        list:
+          type: number
+          example: 28344832
+        template:
+          type: string
+          example: 'example template'
+    Converter:
+      type: object
+      properties:
+        path:
+          type: string
+    Converter-request:
+      type: object
+      properties:
+        list:
+          type: number
+          example: 28344832
+    Quiz:
+      type: object
+      properties:
+        path:
+          type: string
+    Quiz-request:
+      type: object
+      properties:
+        list:
+          type: number
+          example: 28344832
+        template:
+          type: string
+          example: 'example template'
+    Media:
+      type: object
+      properties:
+        id:
+          type: number
+        createdAt:
+          type: string
+          format: date
+        path: 
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+        password:
+          type: string
+        createdAt:
+          type: string
+          format: date
+    # -------------------- vllt nochmal überarbeiten --------------------
+        auths: 
+          type: array
+          items:
+            type: string
+    # ------------------------------------------------------------------
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        list:
+          type: number
+        type:
+          type: string
+        createdAt:
+          type: string
+          format: date
+        updatedAt:
+          type: string
+          format: date
